@@ -66,7 +66,7 @@ proj_files <- function(path = ".") {
 }
 
 
-lint_project <- function(path = ".", ...) {
+lint_project <- function(path = ".", ..., relative_path = T) {
   path <- proj_find(path)
 
   files <- proj_files(path)
@@ -79,13 +79,15 @@ lint_project <- function(path = ".", ...) {
   }))
 
   lints <- lintr:::reorder_lints(lints)
-  lints[] <- lapply(lints, function(x) {
-    x$filename <- sub(paste0(path, .Platform$file.sep), "", x$filename, fixed = TRUE)
-    x
-  })
-
-  attr(lints, "path") <- path
-  class(lints) <- "lints"
+  if (isTRUE(relative_path)) {
+    npath <- normalizePath(path, mustWork = FALSE)
+    lints[] <- lapply(lints, function(x) {
+      x$filename <- rex::re_substitutes(x$filename, rex::rex(npath, 
+                                                   one_of("/", "\\")), "")
+      x
+    })
+    attr(lints, "path") <- path
+  }
   lints
 }
 
